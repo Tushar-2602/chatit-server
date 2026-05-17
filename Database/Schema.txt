@@ -1,0 +1,15 @@
+monogoDbSchema
+
+Collection -> userMessages
+messageId timestamp sequenceNumber userIdTo type
+
+
+Collection -> messageInfo
+messageId payload chatId/groupId windowSequenceNumber userIdFrom
+
+
+Collection -> groupInfo
+groupId memberUserId
+
+Collection -> syncedSequence
+userId sequenceNumber
