@@ -1,6 +1,6 @@
 import { Chatty } from "./Core/src.js";
 
-export {Chatty}
+export {Chatty as Chatit}
 
 import "./Controller/sendSystemMessage.js"
 import "./Core/server.js"

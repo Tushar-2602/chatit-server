@@ -34,6 +34,8 @@ export const handlePingPong = async (instance,ws) => {
 export const startPingPong= async(instance)=>{
     const wss = instance.config.wss;
   const interval = setInterval(async () => {
+    console.log("interval");
+    
     wss.clients.forEach((ws) => {
       if (ws.isAlive === false) {
         return ws.terminate();
@@ -63,6 +65,8 @@ export const startPingPong= async(instance)=>{
 
          }
          catch (err) {
+          console.log("mongo closed");
+          
              closeMongo(instance)
              emitError(instance,err)
          }
@@ -71,8 +75,10 @@ export const startPingPong= async(instance)=>{
 
 const bulkOps = [];
 
+
 wss.clients.forEach((ws) => {
-    if (!ws.userId || ws.sequenceNumber == null || ws.userId==-1 || ws.sequenceNumber == -1) return;
+  const isSeqUpdated =ws.isSeqUpdated;
+    if (!ws.userId || ws.sequenceNumber == null || ws.userId==-1 || ws.sequenceNumber == -1 || !isSeqUpdated) return;
 
     bulkOps.push({
   updateOne: {
@@ -83,8 +89,24 @@ wss.clients.forEach((ws) => {
     upsert: true
   }
 });
-    ws.sequenceNumber=-1;
+console.log(ws.userId + " " + ws.sequenceNumber);
+
 });
+
+/// implement dead connectionss
+const deadConnecionsSequence = instance.config.deadConnecionsSequence;
+for (const [userId, sequenceNumber] of deadConnecionsSequence.entries()) {
+  bulkOps.push({
+  updateOne: {
+    filter: { userId },
+    update: {
+      $max: { sequenceNumber }
+    },
+    upsert: true
+  }
+});
+}
+deadConnecionsSequence.clear();
 
 // execute in one go (🔥 important)
 if (bulkOps.length > 0) {

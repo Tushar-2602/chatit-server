@@ -1,30 +1,45 @@
 import { closeRedis } from "../Cache/redisUtils.js";
+import { emitError } from "../Utils/error.js";
 
 export const closeMongo = async (instance) => {
     try {
+        console.log("close mongo");
+        
         const mongoConfig = instance.config?.mongo;
+        if (!mongoConfig) {
+            emitError(instance,"mongo not connected");
+            return;
+        }
 
         if (mongoConfig.isConnectionType == "client") {
-            console.log("Mongo connection safe to close");
+            return {
+                message:"Mongo connection safe to close",
+                code:1000
+            };
             return;
         }
 
         await mongoConfig.client.close();
-
-        console.log("Mongo connection closed successfully");
 
         // Optional: cleanup reference
         instance.config.mongo = null;
         if (instance.config?.redis?.isConnected) {
             await closeRedis(instance);
         }
+        
+        
+        return {
+                message:"Mongo connection closed successfully",
+                code:1000
+            };
+
 
     } catch (err) {
-        console.error("Error while closing Mongo connection:", err);
+        emitError(instance,err);
     }
 };
 export const setupMongoCollections = async (instance) => {
-    const db = instance.config.mongo.db;
+    const db = instance.config?.mongo?.db;
 
     // USER MESSAGES COLLECTION
     const userMessages = db.collection("userMessages");

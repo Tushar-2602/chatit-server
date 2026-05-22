@@ -93,7 +93,7 @@ const closeClientsAndServer = async (instance) => {
 
 }
 
-Chatty.prototype.changeServerId = async function (serverId) {  // cant change if server is running 
+Chatty.prototype.setServerId = async function (serverId) {  // cant change if server is running 
     try {
 
         if (!serverId || typeof serverId !== "string" || serverId.trim() === "") {

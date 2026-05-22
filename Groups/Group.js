@@ -2,13 +2,21 @@ import randomUUID  from "crypto";
 import { Chatty } from "../Core/src.js";
 import { emitError } from "../Utils/error.js";
 import { getAllUserSockets } from "../Utils/getAllSocketUsers.js";
+import { isArray } from "util";
 Chatty.prototype.addToGroup = async function (grpId, userIds) {
     try {
         const db = this.config?.mongo?.db;
+        if(!db){
+            throw "mongoDb not connected";
+        }
+        // Normalize input → always array
+        if(!grpId || !isArray(userIds)){
+            throw "error adding to group, check groupId and userId";
+        }
+        const idsArray = Array.isArray(userIds) ? userIds : [userIds];
+
         const groupInfo = db.collection("groupInfo");
 
-        // Normalize input → always array
-        const idsArray = Array.isArray(userIds) ? userIds : [userIds];
 
         const docs = idsArray.map(userId => ({
             groupId:grpId,
@@ -26,17 +34,22 @@ Chatty.prototype.addToGroup = async function (grpId, userIds) {
      
     } catch (err) {
         // Ignore duplicate key errors
-        if (err.code === 11000) {
-            return { message: "Some users already exist, rest inserted" };
+        if (err.code === 11000 || err.writeErrors) {
+            emitError(this, "Some users already exist, rest inserted")
+            return ;
         }
 
         emitError(this, err);
-        throw err;
+        //throw err;
     }
 };
 
 Chatty.prototype.removeFromGroup = async function (grpId, userIds) {
     try {
+        const db = this.config?.mongo?.db;
+        if(!db){
+            throw "mongoDb not connected";
+        }
     
         const groupInfo = db.collection("groupInfo");
 
@@ -52,7 +65,7 @@ Chatty.prototype.removeFromGroup = async function (grpId, userIds) {
 
     } catch (err) {
         emitError(this, err);
-        throw err;
+       // throw err;
     }
 };
 
@@ -61,6 +74,9 @@ Chatty.prototype.sendSystemMessageToGroup = async function (groupId,payload) {
        //const { groupId, payload, fromUserId, messageId, timestamp } = data;
        
                const db = this.config?.mongo?.db;
+        if(!db){
+            throw "mongoDb not connected";
+        }
                const redis = this.config?.redis?.base;
        
        
@@ -225,6 +241,11 @@ Chatty.prototype.sendSystemMessageToGroup = async function (groupId,payload) {
 
 Chatty.prototype.getGroupMembers = async function (grpId) {
     try {
+
+        const db = this.config?.mongo?.db;
+        if(!db){
+            throw "mongoDb not connected";
+        }
         
         const groupInfo = db.collection("groupInfo");
 
@@ -239,7 +260,7 @@ Chatty.prototype.getGroupMembers = async function (grpId) {
 
     } catch (err) {
         emitError(this, err);
-        throw err;
+        //throw err;
     }
 };
 
@@ -274,9 +295,13 @@ Chatty.prototype.getGroupMembers = async function (grpId) {
 //         throw err;
 //     }
 // };
+
 Chatty.prototype.deleteGroup = async function (grpId) {
     try {
-     
+        const db = this.config?.mongo?.db;
+        if(!db){
+            throw "mongoDb not connected";
+        }
         const groupInfo = db.collection("groupInfo");
 
         const result = await groupInfo.deleteMany({ grpId });
@@ -287,6 +312,6 @@ Chatty.prototype.deleteGroup = async function (grpId) {
 
     } catch (err) {
         emitError(this, err);
-        throw err;
+        //throw err;
     }
 };

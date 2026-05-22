@@ -12,10 +12,11 @@ export class Chatty extends EventEmitter {
       connectionMap: new Map(), // used to store websocket connections on this server map(userId,map(socketId,ws))
       tokenKey: options.tokenKey, // used for auth if enabled
       acknowledgementMap: new Map(), // used to ack when redis isn't connected
-      lastMessageMap: new Map(),
+      lastMessageMap: new Map(), // used for rate limitting 
+      deadConnecionsSequence: new Map(), // can use array instead, used to update sequence of dead connections
 
       maxConnectionPerUserId:100,
-      maxMessageGap:5000,
+      maxMessageGap:1,
       maxMessageLength:100,
       maxConnectionPerUserIdPerServer:100,
 

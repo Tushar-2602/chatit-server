@@ -21,7 +21,7 @@ export const onMessageHandler = async (instance, payload, ws) => {
       const last = await redisClient.get(key); // string or null
 
       if (last && (now - Number(last)) < MAX_GAP) {
-        sendWsError(ws,"Rate limit exceeded",1008);
+        sendWsError(ws,"Rate limit exceeded",2008);
         return;
       }
 
@@ -36,10 +36,11 @@ export const onMessageHandler = async (instance, payload, ws) => {
 
   // ---------------- FALLBACK ----------------
   else {
+    const userId = ws.userId;
     const last = instance.config?.lastMessageMap.get(userId);
 
     if (last && (now - last) < MAX_GAP) {
-      sendWsError(ws,"Rate limit exceeded",1008);
+      sendWsError(ws,"Rate limit exceeded",3008);
       return;
     }
 
@@ -53,8 +54,8 @@ export const onMessageHandler = async (instance, payload, ws) => {
   try {
 
     data = JSON.parse(payload.toString());
-    data.fromUserId = ws.userId
-    data.timestamp = Date.now()
+    data.fromUserId = ws.userId;
+    data.timestamp = Date.now();
     
   } catch (err) {
     emitError(instance,"Invalid JSON received")
@@ -305,8 +306,10 @@ const chatId = [fromUserId, destinationUserId].sort().join("_");
   const receiverSockets = getAllUserSockets(instance,destinationUserId);
  // console.log(receiverSockets);
   
+ await sendAckSent(instance,ws,{fromUserId,messageId});
+ 
   if (!receiverSockets || receiverSockets.length === 0) {
-    sendWsError(ws,"userId not connected",1008)
+  //  sendWsError(ws,"userId not connected",1008)
     return;
   }
   
@@ -317,7 +320,6 @@ const chatId = [fromUserId, destinationUserId].sort().join("_");
       socket.send(message);
     }
   }
-  await sendAckSent(instance,ws,{fromUserId,messageId});
   }
 
 };
@@ -362,6 +364,7 @@ export const handleSystemMsg = async (instance, data, ws) => {
 
          if (sequenceNumber && ws.sequenceNumber<sequenceNumber) {
           ws.sequenceNumber=sequenceNumber;
+          ws.isSeqUpdated = true;
         }
          // 4. If same server → send directly
          const destinationUserConnections = instance.config.connectionMap?.get(userId);
@@ -563,7 +566,7 @@ export const sendAckSent = async (instance, ws, {
                 await instance.config.redis.base.set(
                     key,
                     JSON.stringify(meta),
-                    { EX: 500 } // 500 seconds TTL
+                    { EX: 100 } // 100 seconds TTL
                 );
             } catch (err) {
                  emitError(instance,err)

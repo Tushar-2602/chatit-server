@@ -84,5 +84,5 @@ Chatty.prototype.addMongo = async function (input, options = {}) {
 
 
 Chatty.prototype.closeMongo = async function (input, options = {}) {
-    closeMongo(this);
+    return await closeMongo(this);
 }

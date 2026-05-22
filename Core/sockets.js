@@ -25,7 +25,7 @@ export const onConnectionHandler = async (instance, ws, req) => {
         const count = await redisClient.incr(key);
 
 
-        if (count >= maxConnectionPerUserId) {
+        if (count > maxConnectionPerUserId) {
           // rollback
           await redisClient.decr(key);
           sendWsError(ws,"max connections reached",1010);
@@ -56,6 +56,7 @@ export const onConnectionHandler = async (instance, ws, req) => {
         ws.userId = userId;
         ws.socketId = randomUUID();
         ws.sequenceNumber = -1;
+
 
 
         // Store connection in map with socketId and userId
@@ -101,6 +102,11 @@ export const onConnectionHandler = async (instance, ws, req) => {
         } catch (error) {
 
         }
+        ws.send(JSON.stringify({
+                msgType: "system",
+                subType: "userId",
+                userId
+            }));
 
     } catch (err) {
 
@@ -159,7 +165,14 @@ export const onConnectionCloseHandler = async (instance, ws) => {
             } catch (error) {
                 emitError(instance, error);
             }
+
         }
+    }
+    const sequenceNumber = ws.sequenceNumber;
+    const deadConnecionsSequence = instance.config.deadConnecionsSequence;
+    const isSeqUpdated =ws.isSeqUpdated;
+    if(sequenceNumber>-1 && isSeqUpdated === true){
+        deadConnecionsSequence.set(userId,sequenceNumber);
     }
 
 

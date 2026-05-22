@@ -72,7 +72,7 @@ Chatty.prototype.generateToken = async function (userId, expiresIn) {
     }
 };
 
-const verifyJwt = async (tokenKey, token) => {
+const verifyJwt = async (ws,tokenKey, token) => {
 
     const jwtModule = await import("jsonwebtoken");
     const jwt = jwtModule.default;
@@ -80,6 +80,7 @@ const verifyJwt = async (tokenKey, token) => {
     try {
         return jwt.verify(token, tokenKey);
     } catch {
+            
         throw new Error("Invalid or expired token");
     }
 };
@@ -96,14 +97,19 @@ export const authenticateConnection = async (instance, url, ws) => {
             throw new Error("Authentication token missing");
         }
 
-        const decoded = await verifyJwt(instance.config.tokenKey, token);
-
-        if (!decoded?.userId) {
-            sendWsError(ws, "Invalid token payload", 1001)
-            throw new Error("Invalid token payload");
+        try {
+            const decoded = await verifyJwt(ws,instance.config.tokenKey, token);
+            
+            if (!decoded?.userId) {
+                sendWsError(ws, "Invalid token payload", 1001)
+                throw new Error("Invalid token payload");
+            }
+            
+            return decoded.userId;
+        } catch (error) {
+            sendWsError(ws,error,1002)
+            throw error;
         }
-
-        return decoded.userId;
     }
 
     // Direct userId mode (no JWT)
