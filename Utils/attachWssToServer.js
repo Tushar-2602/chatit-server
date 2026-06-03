@@ -1,6 +1,6 @@
 import { onConnectionHandler } from "../Core/sockets.js";
 import { startPingPong } from "./wssPingPong.js";
-import { emitError } from "./error.js";
+// import { emitError } from "./error.js";
 import { closeRedis } from "../Cache/redisUtils.js";
 import { closeMongo } from "../Database/mongoUtils.js";
 
@@ -16,7 +16,7 @@ export async function attachWSS(instance, server) {
   wss.on("connection", (ws, req) => onConnectionHandler(instance, ws, req));
 
   wss.on("error", (err) => {
-    emitError(instance, err)
+    throw err
   });
 
   wss.on("close", () => onWssServerCloseHandler(instance));
@@ -41,5 +41,7 @@ const onWssServerCloseHandler = (instance) => {
     if (instance.config.mongo?.isConnected) {
       closeMongo(instance)
     }
-  } catch (e) { }
+  } catch (err) {
+    throw err
+   }
 }

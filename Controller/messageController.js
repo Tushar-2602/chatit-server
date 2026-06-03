@@ -1,4 +1,4 @@
-import { emitError,sendWsError } from "../Utils/error.js";
+import { sendWsError } from "../Utils/error.js";
 import { getActiveServersForUser,publishToServers } from "../Cache/redisUtils.js";
 import { getAllUserSockets } from "../Utils/getAllSocketUsers.js";
 import { handleGroupMsg } from "../Groups/groupUtils.js";
@@ -58,7 +58,7 @@ export const onMessageHandler = async (instance, payload, ws) => {
     data.timestamp = Date.now();
     
   } catch (err) {
-    emitError(instance,"Invalid JSON received")
+    //emitError(instance,"Invalid JSON received")
     sendWsError(ws,"Invalid JSON received",1003)
     return;
   }
@@ -66,7 +66,7 @@ export const onMessageHandler = async (instance, payload, ws) => {
   const { msgType } = data;
 
   if (!msgType) {
-    emitError(instance,"msgType missing")
+    //emitError(instance,"msgType missing")
     sendWsError(ws,"msgType missing",1004)
     return;
   }
@@ -88,13 +88,13 @@ export const onMessageHandler = async (instance, payload, ws) => {
         break;
 
       default:
-        emitError(instance,`Unknown msgType: ${msgType}`)
+        //emitError(instance,`Unknown msgType: ${msgType}`)
         sendWsError(ws,`Unknown msgType: ${msgType}`,1005)
     }
 
   } catch (err) {
     
-    emitError(instance,err)
+    throw err;
     
   }
    
@@ -242,8 +242,9 @@ data.windowSequenceNumber = windowSeq;
 //console.log("2");
     return;
   } catch (err) {
-    emitError(instance, err);
+    //emitError(instance, err);
     // fallback to local delivery
+    throw err;
   }
 }
 else{
@@ -346,7 +347,8 @@ export const handleSystemMsg = async (instance, data, ws) => {
                  }
                  //console.log("5");
              } catch (err) {
-              emitError(instance,"Redis fetch error: " + err)
+              //emitError(instance,"Redis fetch error: " + err)
+              throw err
              }
          }
  
@@ -381,7 +383,8 @@ export const handleSystemMsg = async (instance, data, ws) => {
                  targetSocket.send(JSON.stringify(data));
                  
              } catch (err) {
-                 emitError(instance,"WebSocket send error: " + err)
+                 //emitError(instance,"WebSocket send error: " + err)
+                 throw err;
              }
          } else {
              // 5. Different server → publish to Redis
@@ -402,14 +405,16 @@ export const handleSystemMsg = async (instance, data, ws) => {
                  );
                  //console.log("6");
              } catch (err) {
-                 emitError(instance,"Redis publish error: "+err)
+                 //emitError(instance,"Redis publish error: "+err)
+                 throw err;
              }
          }
  
      } catch (err) {
       //console.log(err);
       
-         emitError("handleSystemMsg error: "+ err)
+         //emitError("handleSystemMsg error: "+ err)
+         throw err
      }
    }
 
@@ -569,7 +574,8 @@ export const sendAckSent = async (instance, ws, {
                     { EX: 100 } // 100 seconds TTL
                 );
             } catch (err) {
-                 emitError(instance,err)
+                 //emitError(instance,err)
+                 throw err
             }
         } 
         // 3. Fallback → store in memory with timeout cleanup
@@ -588,6 +594,6 @@ export const sendAckSent = async (instance, ws, {
         }
 
     } catch (err) {
-        emitError(instance,err)
+        throw err
     }
 };

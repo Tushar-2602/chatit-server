@@ -1,6 +1,6 @@
 import { closeRedis } from "../Cache/redisUtils.js";
 import { awaitWithTimeout } from "./awaitTimeoutHelper.js";
-import { emitError } from "./error.js";
+// import { emitError } from "./error.js";
 import { closeMongo } from "../Database/mongoUtils.js";
 export const handlePingPong = async (instance,ws) => {
      ws.isAlive = true;
@@ -34,7 +34,7 @@ export const handlePingPong = async (instance,ws) => {
 export const startPingPong= async(instance)=>{
     const wss = instance.config.wss;
   const interval = setInterval(async () => {
-    console.log("interval");
+    // console.log("interval");
     
     wss.clients.forEach((ws) => {
       if (ws.isAlive === false) {
@@ -56,7 +56,7 @@ export const startPingPong= async(instance)=>{
          }
          catch (err) {
              closeRedis(instance)
-             emitError(instance,err)
+             throw err
          }
      }
      if (instance.config.mongo?.isConnected) {
@@ -65,10 +65,10 @@ export const startPingPong= async(instance)=>{
 
          }
          catch (err) {
-          console.log("mongo closed");
+          // console.log("mongo closed");
           
              closeMongo(instance)
-             emitError(instance,err)
+             throw err
          }
          const db = instance.config.mongo.db;
     const collection = db.collection("syncedSequence");
@@ -89,7 +89,7 @@ wss.clients.forEach((ws) => {
     upsert: true
   }
 });
-console.log(ws.userId + " " + ws.sequenceNumber);
+// console.log(ws.userId + " " + ws.sequenceNumber);
 
 });
 

@@ -1,17 +1,19 @@
 import randomUUID  from "crypto";
 import { Chatty } from "../Core/src.js";
-import { emitError } from "../Utils/error.js";
+import {  LibError,LibReturn } from "../Utils/error.js";
 import { getAllUserSockets } from "../Utils/getAllSocketUsers.js";
 import { isArray } from "util";
 Chatty.prototype.addToGroup = async function (grpId, userIds) {
     try {
         const db = this.config?.mongo?.db;
         if(!db){
-            throw "mongoDb not connected";
+            
+            throw new LibError("MongoDb not connected",1016)
         }
         // Normalize input → always array
         if(!grpId || !isArray(userIds)){
-            throw "error adding to group, check groupId and userId";
+            
+            throw new LibError("error adding to group, check groupId and userId",1017)
         }
         const idsArray = Array.isArray(userIds) ? userIds : [userIds];
 
@@ -25,21 +27,24 @@ Chatty.prototype.addToGroup = async function (grpId, userIds) {
         }));
 
         // Insert all, ignore duplicates
-        const result = await groupInfo.insertMany(docs, {
-            ordered: false // 🔥 continue even if duplicates occur
-        });
+        try {
+            const result = await groupInfo.insertMany(docs, {
+                ordered: false // 🔥 continue even if duplicates occur
+            });
+        } catch (err) {
+             if (err.code === 11000 || err.writeErrors) {
+            throw new LibError("Some users already exist, rest inserted",1018);
+        }
+        }
 
-        return result
+        return new LibReturn()
 
      
     } catch (err) {
         // Ignore duplicate key errors
-        if (err.code === 11000 || err.writeErrors) {
-            emitError(this, "Some users already exist, rest inserted")
-            return ;
-        }
+       
 
-        emitError(this, err);
+        throw new LibError(err)
         //throw err;
     }
 };
@@ -48,7 +53,7 @@ Chatty.prototype.removeFromGroup = async function (grpId, userIds) {
     try {
         const db = this.config?.mongo?.db;
         if(!db){
-            throw "mongoDb not connected";
+            throw new LibError("mongoDb not connected",1016)
         }
     
         const groupInfo = db.collection("groupInfo");
@@ -60,12 +65,12 @@ Chatty.prototype.removeFromGroup = async function (grpId, userIds) {
             grpId,
             userId: { $in: idsArray }
         });
-        return result
+        return new LibReturn()
      
 
     } catch (err) {
-        emitError(this, err);
-       // throw err;
+    //     emitError(this, err);
+         throw new LibError(err)
     }
 };
 
@@ -75,7 +80,7 @@ Chatty.prototype.sendSystemMessageToGroup = async function (groupId,payload) {
        
                const db = this.config?.mongo?.db;
         if(!db){
-            throw "mongoDb not connected";
+            throw new LibError("mongoDb not connected",1016)
         }
                const redis = this.config?.redis?.base;
        
@@ -231,11 +236,11 @@ Chatty.prototype.sendSystemMessageToGroup = async function (groupId,payload) {
 }
                    }
                }
-       
+       return new LibReturn()
 
     } catch (err) {
-        emitError(this,err)
-      //  throw err;
+        // emitError(this,err)
+       throw new LibError(err)
     }
 };
 
@@ -244,7 +249,7 @@ Chatty.prototype.getGroupMembers = async function (grpId) {
 
         const db = this.config?.mongo?.db;
         if(!db){
-            throw "mongoDb not connected";
+            throw new LibError("mongoDb not connected",1016)
         }
         
         const groupInfo = db.collection("groupInfo");
@@ -256,11 +261,11 @@ Chatty.prototype.getGroupMembers = async function (grpId) {
         // Extract userIds
         const userIds = docs.map(doc => doc.userId);
 
-        return userIds;
+        return new LibReturn({userIds})
 
     } catch (err) {
-        emitError(this, err);
-        //throw err;
+        // emitError(this, err);
+        throw new LibError(err)
     }
 };
 
@@ -306,12 +311,11 @@ Chatty.prototype.deleteGroup = async function (grpId) {
 
         const result = await groupInfo.deleteMany({ grpId });
 
-        return {
+        return new LibReturn({
             deletedCount: result.deletedCount
-        };
-
+        })
     } catch (err) {
-        emitError(this, err);
-        //throw err;
+        // emitError(this, err);
+        throw new LibError(err)
     }
 };

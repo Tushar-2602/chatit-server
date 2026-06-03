@@ -1,6 +1,6 @@
 import { attachWSS } from "../Utils/attachWssToServer.js";
 import { Chatty } from "./src.js";
-import { emitError } from "../Utils/error.js";
+import {  LibError,LibReturn } from "../Utils/error.js";
 
 Chatty.prototype.attachServer = async function (httpServer) {   // attach to server given by user
     try {
@@ -8,7 +8,7 @@ Chatty.prototype.attachServer = async function (httpServer) {   // attach to ser
         // check server
 
         if (!httpServer) {
-            throw new Error("Chatty: httpServer is required");
+            throw new LibError("Chatty: httpServer is required",1007,{})
         }
 
 
@@ -16,11 +16,11 @@ Chatty.prototype.attachServer = async function (httpServer) {   // attach to ser
 
         this.config.wssConnectionType = "Server";
 
-        return wss;
+        return new LibReturn({wss})
 
     } catch (err) {
-        emitError(this, err);
-        throw err;
+       // emitError(this, err);
+        throw new LibError(err);
     }
 };
 
@@ -30,7 +30,7 @@ Chatty.prototype.connectPort = async function (port) {   // make http server on 
         const { createServer } = await import("node:http");
 
         if (!port) {
-            throw new Error("Chatty: port is required");
+            throw new LibError("Chatty: port is required",1008)
         }
 
         const server = createServer();   // create server
@@ -44,11 +44,11 @@ Chatty.prototype.connectPort = async function (port) {   // make http server on 
 
         this.config.wssConnectionType = "Port"
 
-        return {server,wss};
+        return new LibReturn({server,wss})
 
     } catch (err) {
-        emitError(this, err)
-        throw err;
+        // emitError(this, err)
+        throw new LibError(err);
     }
 };
 Chatty.prototype.shutdown = async function () {
@@ -71,11 +71,11 @@ Chatty.prototype.shutdown = async function () {
             await closeClientsAndServer(this);
         }
 
-
+return new LibReturn()
 
     } catch (err) {
-        emitError(this, err);
-        throw err;
+        // emitError(this, err);
+        throw new LibError(err);
     }
 };
 
@@ -97,20 +97,21 @@ Chatty.prototype.setServerId = async function (serverId) {  // cant change if se
     try {
 
         if (!serverId || typeof serverId !== "string" || serverId.trim() === "") {
-            throw new Error("Invalid serverId");
+            throw new LibError("Invalid serverId",1009)
         }
 
         // Prevent changing serverId after server started
         if (this.config.server || this.config.wss || this.config.wssConnectionType) {
-            throw new Error("Cannot change serverId after server has started");
+           
+            throw new LibError("Cannot change serverId after server has started",1010)
         }
 
         this.config.serverId = serverId;
-
+return new LibReturn()
 
     } catch (err) {
-        emitError(this, err);
-        throw err;
+        // emitError(this, err);
+        throw new LibError(err);
     }
 };
 
@@ -118,14 +119,15 @@ Chatty.prototype.getServerId = async function () {
     try {
 
         if (!this.config || !this.config.serverId) {
-            throw new Error("ServerId is not set");
+            
+            throw new LibError("ServerId is not set",1011);
         }
 
-        return this.config.serverId;
+        return new LibReturn({serverId:this.config.serverId})
 
     } catch (err) {
-        emitError(this, err);
-        throw err;
+        // emitError(this, err);
+        throw new LibError(err);
     }
 };
 

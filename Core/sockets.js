@@ -2,7 +2,7 @@
 import { URL } from "url";
 import { handlePingPong } from "../Utils/wssPingPong.js";
 import { authenticateConnection } from "../Utils/auth.js";
-import { emitError, sendWsError } from "../Utils/error.js";
+import {  sendWsError } from "../Utils/error.js";
 import { onMessageHandler } from "../Controller/messageController.js";
 import { randomUUID } from "crypto";
 import { getAllUserSockets } from "../Utils/getAllSocketUsers.js";
@@ -28,8 +28,8 @@ export const onConnectionHandler = async (instance, ws, req) => {
         if (count > maxConnectionPerUserId) {
           // rollback
           await redisClient.decr(key);
-          sendWsError(ws,"max connections reached",1010);
-          throw "max connections reached";
+          sendWsError(ws,"max connections reached",1001);
+          return
         }
         const maxConnectionPerUserIdPerServer = instance.config.maxConnectionPerUserIdPerServer;
 
@@ -37,8 +37,8 @@ export const onConnectionHandler = async (instance, ws, req) => {
             const  userConnections = getAllUserSockets(instance,userId);
             const currentConnections = userConnections.length;
             if (currentConnections>=maxConnectionPerUserIdPerServer) {
-                sendWsError(ws,"max connections per server reached",1010);
-                throw "max connections reached";
+                sendWsError(ws,"max connections per server reached",1002);
+                return
             }
         }
 
@@ -47,8 +47,8 @@ export const onConnectionHandler = async (instance, ws, req) => {
             const  userConnections = getAllUserSockets(instance,userId);
             const currentConnections = userConnections.length;
             if (currentConnections>=maxConnectionPerUserId) {
-                sendWsError(ws,"max connections reached",1010);
-                throw "max connections reached";
+                sendWsError(ws,"max connections reached",1003);
+                return
             }
         }
         }
@@ -76,7 +76,8 @@ export const onConnectionHandler = async (instance, ws, req) => {
         ws.on("close", () => onConnectionCloseHandler(instance, ws));
 
         ws.on("error", (err) => {
-            emitError(instance, err)
+            //emitError(instance, err)
+            throw err;
             try { ws.terminate(); } catch { }
         });
 
@@ -110,7 +111,7 @@ export const onConnectionHandler = async (instance, ws, req) => {
 
     } catch (err) {
 
-        emitError(instance, err);
+        throw err;
         
         try { ws.close(); } catch { }
     }
@@ -163,7 +164,8 @@ export const onConnectionCloseHandler = async (instance, ws) => {
                     pipeline.exec();
                 }
             } catch (error) {
-                emitError(instance, error);
+                //emitError(instance, error);
+                throw error
             }
 
         }

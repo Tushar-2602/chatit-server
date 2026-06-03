@@ -1,4 +1,4 @@
-import { emitError } from "../Utils/error.js";
+// import { emitError } from "../Utils/error.js";
 import { getAllUserSockets } from "../Utils/getAllSocketUsers.js";
 
 export const handleGeneralMsgOnRedis = async (instance,data) => {
@@ -53,13 +53,14 @@ export const handleSystemMsgOnRedis = async (instance, data) => {
             targetSocket.send(JSON.stringify(payload));
            // console.log("7");
         } catch (err) {
-            emitError("handleSystemMsg error: "+ err);
+            // emitError("handleSystemMsg error: "+ err);
+            throw err
         }
 
        
 
     } catch (err) {
-        emitError("handleSystemMsgOnRedis error: " + err)
+        throw err
     }
 };
 

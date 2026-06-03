@@ -1,5 +1,5 @@
 import { handleGeneralMsgOnRedis,handleSystemMsgOnRedis } from "./handleMessage.js";
-import { emitError } from "../Utils/error.js";
+// import { emitError } from "../Utils/error.js";
 
 export const subscribePubSub = async (instance) => {
     const sub = instance.config.redis.sub;
@@ -17,7 +17,8 @@ export const subscribePubSub = async (instance) => {
             
 
         } catch (err) {
-            emitError(instance, err);
+            //emitError(instance, err);
+            throw err;
         }
     });
 };
@@ -54,7 +55,7 @@ export const updateConnectionMap = async (instance) => {
         await pipeline.exec();
 
     } catch (err) {
-        emitError(instance, err);
+        throw err
     }
 };
 
@@ -71,13 +72,15 @@ export const closeRedis = async (instance) => {
       try {
         if (client.isOpen) {
           await client.quit();   // graceful close
-          console.log("redis closed gracefully");
+          // console.log("redis closed gracefully");
+          instance.emit("redisConnectionClose","redis closed gracefully")
           
         }
       } catch {
         try {
           client.disconnect();   // force close
-          console.log("redis closed forcefully");
+          // console.log("redis closed forcefully");
+          instance.emit("redisConnectionClose","redis closed forcefully")
         } catch {}
       }
     })

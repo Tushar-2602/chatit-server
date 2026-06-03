@@ -1,7 +1,7 @@
 import { Chatty } from "../Core/src.js";
 import { awaitWithTimeout } from "../Utils/awaitTimeoutHelper.js";
 import { closeMongo, setupMongoCollections } from "./mongoUtils.js";
-import { emitError } from "../Utils/error.js";
+import { LibError,LibReturn } from "../Utils/error.js";
 
 let _MongoClient;
 
@@ -13,9 +13,10 @@ async function getMongoClient() {
         _MongoClient = mod.MongoClient;
         return _MongoClient;
     } catch {
-        throw new Error(
-            "MongoDB package not installed. Run: npm install mongodb"
-        );
+        // throw new Error(
+        //     "MongoDB package not installed. Run: npm install mongodb"
+        // );
+        throw new LibError("MongoDB package not installed. Run: npm install mongodb",1015)
     }
 }
 
@@ -42,9 +43,8 @@ Chatty.prototype.addMongo = async function (input, options = {}) {
             connectionType="client";
         }
         else {
-            throw new Error(
-                "Provide a MongoDB URI or db instance (mongoClient.db())"
-            );
+            
+            throw new LibError("Provide a MongoDB URI or db instance (mongoClient.db())",1016);
         }
 
         // Test connection
@@ -72,17 +72,23 @@ Chatty.prototype.addMongo = async function (input, options = {}) {
             "warning",
             "Make sure database is empty else it may cause future errors"
         );
+        return new LibReturn()
 
     } catch (err) {
         if (this.config.mongo) {
             this.config.mongo.isConnected = false;
         }
-        emitError(this, err);
-        throw err;
+        // emitError(this, err);
+        throw new LibError(err);
     }
 };
 
 
 Chatty.prototype.closeMongo = async function (input, options = {}) {
-    return await closeMongo(this);
+    try {
+        await closeMongo(this);
+        return new LibReturn()
+    } catch (err) {
+        throw new LibError(err);
+    }
 }

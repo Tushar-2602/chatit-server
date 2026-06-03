@@ -1,16 +1,20 @@
 import { sendAckSent } from "../Controller/messageController.js"
-import { emitError } from "../Utils/error.js";
+// import { emitError } from "../Utils/error.js";
 import { sendWsError } from "../Utils/error.js";
 
 export const handleGroupMsg = async (instance, data, ws) => {
     try {
+
         const { groupId, payload, fromUserId, messageId, timestamp } = data;
 
         const db = instance.config?.mongo?.db;
+                if(!db){
+                    sendWsError(ws,"group functionality not available",1006,messageId)
+                }
         const redis = instance.config?.redis?.base;
         
     if(payload.size > instance.config?.maxMessageLength){
-    sendWsError(ws,"Invalid payload received",1003)
+    sendWsError(ws,"Invalid payload received",1004,messageId)
     return;
     }
 
@@ -31,7 +35,7 @@ if (!userIds.includes(fromUserId)) {
     //console.log(userIds);
     
     
-    sendWsError(ws, "User is not a member of this group", 403);
+    sendWsError(ws, "User is not a member of this group", 1005,messageId);
     return; // stop further execution
 }
 
@@ -174,7 +178,7 @@ if (!userIds.includes(fromUserId)) {
         }
 
     } catch (err) {
-        emitError(instance, err);
+        //emitError(instance, err);
         throw err;
     }
 };

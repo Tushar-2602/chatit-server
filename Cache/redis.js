@@ -1,7 +1,7 @@
 import { Chatty } from "../Core/src.js";
 import { awaitWithTimeout } from "../Utils/awaitTimeoutHelper.js";
 import { updateConnectionMap,subscribePubSub,subscribeStreams, closeRedis } from "./redisUtils.js";
-import { emitError } from "../Utils/error.js";
+import {  LibError, LibReturn } from "../Utils/error.js";
 
 Chatty.prototype.addRedis = async function (input) {
     try {
@@ -17,9 +17,8 @@ Chatty.prototype.addRedis = async function (input) {
             } catch (e) {
                 //console.log(e);
                 
-                throw new Error(
-                    "Redis package not installed. Run: npm install redis"
-                );
+                
+                throw new LibError("Redis package not installed. Run: npm install redis",1012)
             }
 
         }  
@@ -28,7 +27,8 @@ Chatty.prototype.addRedis = async function (input) {
             redisClient = input;
         } 
         else {
-            throw new Error("Provide a valid Redis URL or node-redis client");
+           
+            throw new LibError("Provide a valid Redis URL or node-redis client",1013)
         }
 
         // connect if not connected
@@ -40,7 +40,7 @@ Chatty.prototype.addRedis = async function (input) {
         try {
             await awaitWithTimeout(redisClient.ping());
         } catch (e) {
-            throw new Error("Redis connection test failed");
+            throw new LibError("Redis connection test failed",1014)
         }
 
         // duplicate clients
@@ -71,19 +71,21 @@ Chatty.prototype.addRedis = async function (input) {
         await subscribeStreams(this);
         await updateConnectionMap(this);
         this.emit("redisConnection","Redis connected")
+        return new LibReturn()
 
     } catch (err) {
-        emitError(this, err);
-        throw err;
+        
+        throw new LibError(err);
     }
 };
 
 Chatty.prototype.closeRedis = async function () {
     try {
        closeRedis(this)
+       return new LibReturn()
     } catch (err) {
-        emitError(this, err);
-        throw err;
+        // emitError(this, err);
+        throw new LibError(err);
     }
 };
 

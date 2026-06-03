@@ -1,11 +1,12 @@
 import { Chatty } from "../Core/src.js";
-import { emitError } from "../Utils/error.js";
+import {  LibError,LibReturn } from "../Utils/error.js";
 import { getActiveServersForUser,publishToServers } from "../Cache/redisUtils.js";
 import { getAllUserSockets } from "../Utils/getAllSocketUsers.js";
 Chatty.prototype.sendSystemMessageToUser = async function (userId, message) {
   try {
-    if (!userId) throw new Error("userId required");
-    if (!message) throw new Error("message required");
+
+    if (!userId) throw new  LibError("userId required",1005);
+    if (!message) throw new LibError("message required",1006);
 
     const redisConfig = this.config.redis;
 
@@ -29,7 +30,7 @@ Chatty.prototype.sendSystemMessageToUser = async function (userId, message) {
         if (activeServers.length > 0) {
           // 2. reuse your function
           await publishToServers(pub, activeServers, data);
-          return true;
+         return new LibReturn()
         }
       } catch (err) {
         console.error("Redis system message failed:", err);
@@ -48,9 +49,10 @@ Chatty.prototype.sendSystemMessageToUser = async function (userId, message) {
         ws.send(msg);
       }
     }
+return new LibReturn()
 
   } catch (err) {
-    emitError(this, err);
+    throw new LibError(err);
     //return false;
     
   }
