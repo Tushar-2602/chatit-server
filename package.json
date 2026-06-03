@@ -1,6 +1,6 @@
 {
-  "name": "chatty",
-  "version": "1.0.0",
+  "name": "chatit-server",
+  "version": "1.0.2",
   "description": "",
   "license": "ISC",
   "author": "",
@@ -18,7 +18,11 @@
     "mongodb": "^6.21.0"
   },
   "peerDependenciesMeta": {
-    "redis": { "optional": true },
-    "mongodb": { "optional": true }
+    "redis": {
+      "optional": true
+    },
+    "mongodb": {
+      "optional": true
+    }
   }
 }
